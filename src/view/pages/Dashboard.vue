@@ -16,11 +16,6 @@ export default {
   components: {
     ApplicationsList,
     Sidebar
-  },
-
-  async created() {
-    await this.$store.dispatch("app/getAppsList");
-    await this.$store.dispatch("app/getPlanList");
   }
 };
 </script>

@@ -19,66 +19,100 @@
       </b-col>
 
       <b-col class="text-right">
-        <b-button variant="primary" @click="createApplication"
-          >create app</b-button
-        >
+        <b-button variant="primary" @click="createApp">create app</b-button>
       </b-col>
     </b-row>
 
     <b-row class="mt-3">
-      <b-table
-        :items="apps"
-        select-mode="single"
-        :fields="fieldsName"
-        :busy="isBusy"
-        :filter="filter"
-        empty-text="No data"
-        @filtered="onFiltered"
-        show-empty
-      >
-        <template #cell(name)="{item}">
-          <div>
-            <b-link @click.prevent="show(item.operation)">{{
-              item.name
-            }}</b-link>
-            <div>{{ item.type + " / " + item.framework }}</div>
-          </div>
-        </template>
+      <loading-spinner :loading="loading">
+        <b-table
+          :items="apps"
+          select-mode="single"
+          :fields="fieldsName"
+          :filter="filter"
+          :busy="listLoading"
+          empty-text="No data"
+          @filtered="onFiltered"
+          show-empty
+        >
+          <template #cell(name)="{item}">
+            <div>
+              <b-link @click.prevent="updateApp(item.id)">{{
+                item.name
+              }}</b-link>
+              <div>{{ item.type + " / " + item.framework }}</div>
+            </div>
+          </template>
 
-        <template #cell(screenshot)="{item}">
-          <b-img
-            :src="getImageUrl(item.screenshot)"
-            width="75"
-            height="75"
-          ></b-img>
-        </template>
+          <template #cell(screenshot)="{item}">
+            <b-img
+              :src="getImageUrl(item.screenshot)"
+              width="75"
+              height="75"
+            ></b-img>
+          </template>
 
-        <template #cell(action)>
-          action
-        </template>
-      </b-table>
+          <template #cell(plan)="{item}">
+            {{ getPlan(item.id) }}
+          </template>
+
+          <template #cell(action)="{item}">
+            <b-button
+              pill
+              variant="outline-danger"
+              size="sm"
+              @click="updateApp(item.id)"
+              class="px-4 mx-2"
+            >
+              Update
+            </b-button>
+
+            <b-button
+              pill
+              variant="outline-primary"
+              size="sm"
+              @click="selectPlan(item.id)"
+              class="px-4 mx-2"
+            >
+              Select plan
+            </b-button>
+          </template>
+        </b-table>
+      </loading-spinner>
     </b-row>
   </div>
 </template>
 
 <script>
 import { mapGetters } from "vuex";
+import * as appApi from "@/apis/app";
+import LoadingSpinner from "@/components/LoadingSpinner.vue";
 
 export default {
-  components: {},
+  name: "ApplicationList",
+
+  components: {
+    LoadingSpinner
+  },
+
+  async mounted() {
+    this.listLoading = true;
+    await this.$store.dispatch("app/getAppsList");
+    await this.$store.dispatch("app/getPlanList");
+    this.listLoading = false;
+  },
+
   data() {
     return {
       fieldsName: [
-        { key: "name", label: "name", filterByFormatted: true },
-        { key: "description", label: "description" },
-        { key: "domainName", label: "domain name" },
-        { key: "screenshot", label: "screenshot" },
-        { key: "subscription", label: "subscription" },
-        { key: "action", label: "" }
+        { key: "name", label: "Name", filterByFormatted: true },
+        { key: "description", label: "Description" },
+        { key: "domain_name", label: "Domain name" },
+        { key: "screenshot", label: "Screenshot" },
+        { key: "action", label: "Action" }
       ],
-      options: [{ text: "deployed", value: "deployed" }],
-      isBusy: true,
-      items: [],
+      loading: false,
+      listLoading: false,
       filter: null
     };
   },
@@ -86,54 +120,17 @@ export default {
   computed: {
     ...mapGetters({
       apps: "app/apps",
-      subscriptions: "app/subscriptionGetter"
+      subscription: "app/subscription",
+      app: "app/app"
     })
   },
 
   methods: {
-    async update(id) {
-      await this.$store.dispatch("getApp", id);
-      this.$router.push("/application");
+    updateApp(id) {
+      this.$router.push({ name: "application", params: { id } });
     },
 
-    deploy(id) {
-      console.log(id);
-    },
-
-    async show(id) {
-      await this.$store.dispatch("getApp", id);
-      const app = this.getAppInfo;
-      console.log(app.subscription);
-      if (app?.subscription)
-        await this.$store.dispatch("getSubscription", app.subscription);
-      else await this.$store.commit("setSubscription", { plan: 1 });
-      this.$root.$emit("bv::toggle::collapse", "sidebar-right");
-    },
-
-    mapPropsToState() {
-      const appsList = this.appListGetter;
-      let data = [];
-
-      if (appsList.length > 0) {
-        for (let i = 0; i < appsList.length; i++) {
-          let index = i + 1;
-          let operation = appsList[i]["id"];
-          let name = appsList[i]["name"];
-          let type = appsList[i]["type"];
-          let framework = appsList[i]["framework"];
-          let deployed = false;
-          data.push({ index, name, type, deployed, operation, framework });
-        }
-      }
-      this.items = data;
-    },
-
-    onFiltered(filteredItems) {
-      this.totalRows = filteredItems.length;
-      this.currentPage = 1;
-    },
-
-    createApplication() {
+    createApp() {
       this.$router.push({
         name: "application",
         params: {
@@ -142,29 +139,35 @@ export default {
       });
     },
 
+    async selectPlan(id) {
+      this.loading = true;
+
+      const { data } = await appApi.getApp(id);
+      this.$store.commit("app/setApp", data);
+
+      if (data?.subscription)
+        await this.$store.dispatch(
+          "app/getSubscription",
+          this.app.subscription
+        );
+      else this.$store.commit("app/setSubscription", { plan: 1 });
+
+      this.loading = false;
+      this.$root.$emit("bv::toggle::collapse", "sidebar-right");
+    },
+
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length;
+      this.currentPage = 1;
+    },
+
     getImageUrl(url) {
       if (url) {
-        console.log(url.split("?")[0]);
         return url.split("?")[0];
       } else {
         return "https://via.placeholder.com/150";
       }
     }
-  },
-
-  watch: {
-    appListGetter: {
-      deep: true,
-      handler: function() {
-        this.mapPropsToState();
-      }
-    }
   }
 };
 </script>
-
-<style lang="scss" scoped>
-.h-30 {
-  height: 30px;
-}
-</style>

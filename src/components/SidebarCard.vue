@@ -7,89 +7,72 @@
       class="d-flex text-center sidebar-card"
     >
       <b-card-text>
-        {{ plan && plan.price ? plan.price : "" }}
+        {{ plan && +plan.price ? plan.price : "" }}
       </b-card-text>
+
       <b-list-group>
-        <b-list-group-item
-          ><b-icon check variant="primary"></b-icon> and launch unlimited
-          applications</b-list-group-item
-        >
-        <b-list-group-item
-          ><b-icon check variant="primary"></b-icon>GitHub
-          integration</b-list-group-item
-        >
-        <b-list-group-item
-          ><b-icon check variant="primary"></b-icon>Free web app hosting with
-          Crowdbotics domain</b-list-group-item
-        >
-        <b-list-group-item
-          ><b-icon check variant="primary"></b-icon>PostgreSQL storage with up
-          to 1000 rows of data</b-list-group-item
-        >
-        <b-list-group-item
-          ><b-icon check variant="primary"></b-icon>Application hosting on
-          Heroku</b-list-group-item
-        >
-        <b-list-group-item
-          ><b-icon check variant="primary"></b-icon>Community forum
-          support</b-list-group-item
-        >
+        <b-list-group-item v-for="(detail, index) in planDetails" :key="index">
+          <b-icon check variant="primary"></b-icon>
+          {{ detail }}
+        </b-list-group-item>
       </b-list-group>
-      <b-button
-        class="mt-2"
-        variant="primary"
-        @click.prevent="selectPlan(plan.id)"
-        >{{ selected ? "current" : "select" }}</b-button
-      >
+
+      <loading-spinner :loading="loading">
+        <b-button class="mt-2" variant="primary" @click="selectPlan(plan.id)">{{
+          selected ? "current" : "select"
+        }}</b-button>
+      </loading-spinner>
     </b-card>
   </div>
 </template>
 
 <script>
 import { mapGetters } from "vuex";
+import LoadingSpinner from "@/components/LoadingSpinner.vue";
+import constants from "@/services/constants";
 
 export default {
+  name: "SidebarCard",
+  components: {
+    LoadingSpinner
+  },
   props: {
     plan: Object
   },
   data() {
     return {
-      planId: 1
+      loading: false,
+      planDetails: constants.planDetails
     };
   },
   computed: {
     ...mapGetters({
-      getAppInfo: "app/getAppInfo",
-      subscriptionGetter: "app/subscriptionGetter"
+      app: "app/app",
+      subscription: "app/subscription"
     }),
+
     selected() {
-      return this.plan?.id === this.planId;
+      const oldPlanId = this.subscription.plan || 1;
+      return this.plan?.id === oldPlanId;
     }
   },
   methods: {
     async selectPlan(id) {
-      let subscription = this.subscriptionGetter;
-      if (subscription?.id) {
-        subscription.plan = id;
-        await this.$store.dispatch("updateSubscription", subscription);
+      this.loading = true;
+
+      if (this.subscription?.id) {
+        const params = Object.assign({}, this.subscription);
+        params.plan = id;
+
+        await this.$store.dispatch("app/updateSubscription", params);
       } else {
-        await this.$store.dispatch("createSubscription", {
+        await this.$store.dispatch("app/createSubscription", {
           plan: id,
-          app: this.getAppInfo.id,
+          app: this.app.id,
           active: true
         });
       }
-    },
-    setPlanId() {
-      this.planId = this.subscriptionGetter.plan;
-    }
-  },
-  watch: {
-    subscriptionGetter: {
-      deep: true,
-      handler: function() {
-        this.setPlanId();
-      }
+      this.loading = false;
     }
   }
 };
@@ -98,5 +81,9 @@ export default {
 <style lang="scss" scoped>
 .sidebar-card {
   width: 300px;
+}
+
+.card-text {
+  min-height: 25px;
 }
 </style>

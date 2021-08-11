@@ -100,9 +100,7 @@ const actions = {
         { root: true }
       );
     } else {
-      const message = Object.keys(data)
-        .map(key => data[key])
-        .join(",");
+      const message = data?.email?.email;
 
       commit(
         "showNotification",

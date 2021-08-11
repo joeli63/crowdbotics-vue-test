@@ -25,7 +25,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      plans: "app/planListGetter"
+      plans: "app/plans"
     })
   }
 };

@@ -1,15 +1,25 @@
 import * as appApi from "@/apis/app";
 import Vue from "vue";
 
+const initialAppData = {
+  name: "",
+  description: "",
+  type: "",
+  framework: "",
+  domain_name: "",
+  subscription: "",
+  screenshot: "",
+  plan: ""
+};
+
 const state = {
   appList: [],
-  app: {},
+  app: initialAppData,
   planList: [],
   plan: 1,
   subscriptionList: [],
   subscription: {},
-  errors: [],
-  isActive: true
+  errors: []
 };
 
 const showNotification = (commit, data) => {
@@ -32,11 +42,10 @@ const showNotification = (commit, data) => {
 
 const getters = {
   apps: state => state.appList,
-  getIsActive: state => state.isActive,
   app: state => state.app,
-  planListGetter: state => state.planList,
-  subscriptionGetter: state => state.subscription,
-  planGetter: state => state.plan
+  plans: state => state.planList,
+  plan: state => state.plan,
+  subscription: state => state.subscription
 };
 
 const actions = {
@@ -48,16 +57,7 @@ const actions = {
 
   async getApp({ commit }, id) {
     if (id === "create") {
-      commit("setApp", {
-        name: "",
-        description: "",
-        type: "",
-        framework: "",
-        domain_name: "",
-        subscription: "",
-        screenshot: "",
-        plan: ""
-      });
+      commit("setApp", initialAppData);
     } else {
       const { data } = await appApi.getApp(id);
 
@@ -73,7 +73,7 @@ const actions = {
     const res = await appApi.createApp(input);
 
     if (res.data.id) {
-      commit("setApp", res.data);
+      commit("setApp", initialAppData);
     } else {
       showNotification(commit, res.data);
     }

@@ -32,6 +32,9 @@
               SUBMIT
             </b-button>
           </loading-spinner>
+          <router-link to="/login" class="row pr-2 justify-content-center">
+            Login
+          </router-link>
         </b-form>
       </div>
     </div>
@@ -66,10 +69,9 @@ export default {
 
       if (validation) {
         this.loading = true;
-        await this.$store.dispatch("resetPassword", this.form.email); // TODO: upgrade the email params - grammar looks bad
+        await this.$store.dispatch("resetPassword", this.form.email);
 
         this.loading = false;
-        debugger;
         if (this.notification.type === "info") this.$router.push("/login");
       }
     }
