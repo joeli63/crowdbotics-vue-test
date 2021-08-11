@@ -174,8 +174,8 @@ export default {
           type: "info",
           message: "App was created successfully"
         });
-        this.$router.push({ name: "dashboard" });
       }
+      this.$router.push({ name: "dashboard" });
       this.btnLoading = false;
     }
   }
