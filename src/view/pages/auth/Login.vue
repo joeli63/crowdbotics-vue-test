@@ -7,21 +7,6 @@
         <b-form @submit.prevent="login" novalidate>
           <b-form-group>
             <b-form-input
-              id="name"
-              v-model="form.name"
-              type="text"
-              placeholder="Name"
-              v-validate="'required'"
-              name="name"
-              :class="{ 'input-error': errors.has('name') }"
-            />
-            <small v-if="errors.has('name')" class="text-danger">
-              {{ errors.first("name") }}
-            </small>
-          </b-form-group>
-
-          <b-form-group>
-            <b-form-input
               id="email"
               v-model="form.email"
               type="email"
@@ -93,7 +78,6 @@ export default {
     return {
       form: {
         email: "",
-        name: "",
         password: ""
       },
       loading: false
@@ -112,7 +96,6 @@ export default {
         this.loading = true;
 
         const params = {
-          name: this.form.name,
           email: this.form.email,
           password: this.form.password
         };
