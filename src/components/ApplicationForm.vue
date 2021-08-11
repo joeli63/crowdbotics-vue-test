@@ -109,7 +109,7 @@
           </b-col>
         </b-row>
 
-        <b-row class="justify-content-center mt-5">
+        <b-row class="justify-content-center mt-5 action">
           <loading-spinner :loading="btnLoading">
             <button type="submit" class="form-control btn btn-danger w-50">
               {{ app.id ? "UPDATE" : "CREATE" }}
@@ -183,7 +183,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-::v-deep.loading-spinner {
+::v-deep.action .loading-spinner {
   text-align: center;
 }
 </style>
