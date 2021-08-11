@@ -10,7 +10,7 @@ import axios from "axios";
 
 Vue.use(BootstrapVue);
 Vue.use(IconsPlugin);
-Vue.use(VeeValidate, { fieldsBagName: 'veeFields' });
+Vue.use(VeeValidate, { fieldsBagName: "veeFields" });
 
 Vue.component("ValidationProvider", ValidationProvider);
 

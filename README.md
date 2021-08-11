@@ -1,4 +1,4 @@
-# vue-test-project
+# crowdbotics-vue-test
 
 ## Project setup
 ```

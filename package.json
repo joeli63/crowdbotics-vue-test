@@ -1,5 +1,6 @@
 {
-  "name": "vue-test-project",
+  "name": "crowdbotics-vue-test",
+  "author": "Khaled Fouad",
   "version": "0.1.0",
   "private": true,
   "scripts": {
