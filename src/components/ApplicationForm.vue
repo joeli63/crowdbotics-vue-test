@@ -103,19 +103,24 @@
           </b-col>
 
           <b-col>
-            <b-form-group
-              label="Enter your screen shot"
-              label-for="screen shot"
-            >
-              <b-form-file
-                id="screenshot"
-                type="text"
-                placeholder="please write screenshot"
-                name="screenshot"
-                v-model="app.screenshot"
-                v-validate="'required'"
-                :class="{ 'input-error': errors.has('screenshot') }"
-              ></b-form-file>
+            <b-form-group label="Enter your screenshot" label-for="screenshot">
+              <div class="d-flex align-items-center">
+                <b-img
+                  :src="imageUrl"
+                  width="75"
+                  height="75"
+                  class="mr-2"
+                ></b-img>
+                <b-form-file
+                  id="screenshot"
+                  v-model="screenshot"
+                  v-validate="'required'"
+                  type="text"
+                  placeholder="please select screenshot"
+                  name="screenshot"
+                  :class="{ 'input-error': errors.has('screenshot') }"
+                ></b-form-file>
+              </div>
               <small v-if="errors.has('screenshot')" class="text-danger">{{
                 errors.first("screenshot")
               }}</small>
@@ -154,11 +159,34 @@ export default {
     };
   },
   computed: {
-    ...mapState("app", ["app"])
+    ...mapState("app", ["app"]),
+    appId() {
+      return this.$route.params.id;
+    },
+    isNew() {
+      return this.appId === "create";
+    },
+    imageUrl() {
+      if (this.app.screenshot) {
+        if (typeof this.app.screenshot === "string")
+          return this.app.screenshot.split("?")[0];
+        else return window.URL.createObjectURL(this.app.screenshot);
+      } else {
+        return "https://via.placeholder.com/75";
+      }
+    },
+    screenshot: {
+      get: function() {
+        if (typeof this.app.screenshot === "string") return null;
+        else return this.app.screenshot;
+      },
+      set: function(value) {
+        this.app.screenshot = value;
+      }
+    }
   },
   async created() {
-    const appId = this.$route.params.id;
-    if (appId === "create") {
+    if (this.isNew) {
       const initialAppData = {
         name: "",
         description: "",
@@ -166,14 +194,14 @@ export default {
         framework: "",
         domain_name: "",
         subscription: "",
-        screenshot: new File(),
+        screenshot: null,
         plan: ""
       };
       this.$store.commit("app/setApp", initialAppData);
     } else {
       this.loading = true;
 
-      await this.$store.dispatch("app/getApp", appId);
+      await this.$store.dispatch("app/getApp", this.appId);
       this.loading = false;
     }
   },
@@ -189,9 +217,7 @@ export default {
           formData.append(key, value);
         });
 
-        const appId = this.$route.params.id;
-        if (appId === "create")
-          await this.$store.dispatch("app/createApp", formData);
+        if (this.isNew) await this.$store.dispatch("app/createApp", formData);
         else await this.$store.dispatch("app/updateApp", formData);
 
         this.$router.push({ name: "dashboard" });

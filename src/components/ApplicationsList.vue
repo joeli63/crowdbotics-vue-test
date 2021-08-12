@@ -23,8 +23,8 @@
       </b-col>
     </b-row>
 
-    <b-row class="mt-3">
-      <loading-spinner :loading="listLoading">
+    <loading-spinner :loading="listLoading">
+      <b-row class="mt-3 justify-content-center">
         <b-table
           :items="apps"
           select-mode="single"
@@ -34,6 +34,8 @@
           @filtered="onFiltered"
           show-empty
           sticky-headers
+          :per-page="perPage"
+          :current-page="currentPage"
         >
           <template #cell(name)="{item}">
             <div>
@@ -93,8 +95,15 @@
             </b-row>
           </template>
         </b-table>
-      </loading-spinner>
-    </b-row>
+
+        <b-pagination
+          v-model="currentPage"
+          :total-rows="rows"
+          :per-page="perPage"
+          aria-controls="my-table"
+        ></b-pagination>
+      </b-row>
+    </loading-spinner>
   </div>
 </template>
 
@@ -128,7 +137,9 @@ export default {
       ],
       listLoading: false,
       loadingAppId: null,
-      filter: null
+      filter: null,
+      perPage: 3,
+      currentPage: 1
     };
   },
 
@@ -137,7 +148,10 @@ export default {
       apps: "app/apps",
       subscription: "app/subscription",
       app: "app/app"
-    })
+    }),
+    rows() {
+      return this.apps.length;
+    }
   },
 
   methods: {
@@ -172,10 +186,13 @@ export default {
     },
 
     async deleteApp(id) {
-      this.listLoading = true;
-      await this.$store.dispatch("app/deleteApp", id);
-      await this.$store.dispatch("app/getAppsList");
-      this.listLoading = false;
+      const sureDelete = window.confirm("Are you sure?");
+      if (sureDelete) {
+        this.listLoading = true;
+        await this.$store.dispatch("app/deleteApp", id);
+        await this.$store.dispatch("app/getAppsList");
+        this.listLoading = false;
+      }
     },
 
     onFiltered(filteredItems) {
@@ -187,7 +204,7 @@ export default {
       if (url) {
         return url.split("?")[0];
       } else {
-        return "https://via.placeholder.com/150";
+        return "https://via.placeholder.com/75";
       }
     }
   }
