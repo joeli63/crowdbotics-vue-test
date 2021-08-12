@@ -24,16 +24,16 @@
     </b-row>
 
     <b-row class="mt-3">
-      <loading-spinner :loading="loading">
+      <loading-spinner :loading="listLoading">
         <b-table
           :items="apps"
           select-mode="single"
           :fields="fieldsName"
           :filter="filter"
-          :busy="listLoading"
           empty-text="No data"
           @filtered="onFiltered"
           show-empty
+          sticky-headers
         >
           <template #cell(name)="{item}">
             <div>
@@ -57,25 +57,40 @@
           </template>
 
           <template #cell(action)="{item}">
-            <b-button
-              pill
-              variant="outline-danger"
-              size="sm"
-              @click="updateApp(item.id)"
-              class="px-4 mx-2"
-            >
-              Update
-            </b-button>
+            <b-row class="align-items-center">
+              <b-button
+                pill
+                variant="outline-danger"
+                size="sm"
+                @click="updateApp(item.id)"
+                class="px-4 mx-2"
+              >
+                Update
+              </b-button>
 
-            <b-button
-              pill
-              variant="outline-primary"
-              size="sm"
-              @click="selectPlan(item.id)"
-              class="px-4 mx-2"
-            >
-              Select plan
-            </b-button>
+              <b-button
+                pill
+                variant="outline-primary"
+                size="sm"
+                @click="selectPlan(item.id)"
+                class="px-4 mx-2 select-plan-button"
+              >
+                <span v-if="loadingAppId === item.id">
+                  <b-spinner small></b-spinner>
+                  Loading...
+                </span>
+                <span v-else>Select plan</span>
+              </b-button>
+
+              <b-row style="font-size: 2rem;" class="ml-1">
+                <b-icon
+                  icon="trash-fill"
+                  class="rounded-circle bg-danger p-2 icon-button"
+                  variant="light"
+                  @click="deleteApp(item.id)"
+                ></b-icon>
+              </b-row>
+            </b-row>
           </template>
         </b-table>
       </loading-spinner>
@@ -95,7 +110,7 @@ export default {
     LoadingSpinner
   },
 
-  async mounted() {
+  async created() {
     this.listLoading = true;
     await this.$store.dispatch("app/getAppsList");
     await this.$store.dispatch("app/getPlanList");
@@ -111,8 +126,8 @@ export default {
         { key: "screenshot", label: "Screenshot" },
         { key: "action", label: "Action" }
       ],
-      loading: false,
       listLoading: false,
+      loadingAppId: null,
       filter: null
     };
   },
@@ -140,7 +155,7 @@ export default {
     },
 
     async selectPlan(id) {
-      this.loading = true;
+      this.loadingAppId = id;
 
       const { data } = await appApi.getApp(id);
       this.$store.commit("app/setApp", data);
@@ -152,8 +167,15 @@ export default {
         );
       else this.$store.commit("app/setSubscription", { plan: 1 });
 
-      this.loading = false;
       this.$root.$emit("bv::toggle::collapse", "sidebar-right");
+      this.loadingAppId = null;
+    },
+
+    async deleteApp(id) {
+      this.listLoading = true;
+      await this.$store.dispatch("app/deleteApp", id);
+      await this.$store.dispatch("app/getAppsList");
+      this.listLoading = false;
     },
 
     onFiltered(filteredItems) {
@@ -171,3 +193,9 @@ export default {
   }
 };
 </script>
+
+<style lang="scss" scoped>
+.select-plan-button {
+  width: 130px;
+}
+</style>

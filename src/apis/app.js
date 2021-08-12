@@ -30,8 +30,8 @@ export const getApp = async id => {
 
 export const updateApp = async data => {
   try {
-    console.log(data);
-    return await axios.patch(`/apps/${data.id}`, data, { ...defaultOptions });
+    const appId = data.get("id");
+    return await axios.put(`/apps/${appId}`, data, { ...defaultOptions });
   } catch (e) {
     return e.response;
   }

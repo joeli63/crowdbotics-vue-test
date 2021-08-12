@@ -22,18 +22,21 @@ const state = {
   errors: []
 };
 
-const showNotification = (commit, data) => {
+const showNotification = (commit, type, data) => {
   /**
    *  combine error messages.
    *  - email: ["A user is already registered with this e-mail address."]
    */
-  const message = Object.keys(data)
-    .map(key => data[key])
-    .join(",");
+  const message =
+    typeof data === "object"
+      ? Object.keys(data)
+          .map(key => data[key])
+          .join(",")
+      : data;
 
   commit(
     "showNotification",
-    { type: "danger", message },
+    { type, message },
     {
       root: true
     }
@@ -56,24 +59,20 @@ const actions = {
   },
 
   async getApp({ commit }, id) {
-    if (id === "create") {
-      commit("setApp", initialAppData);
-    } else {
-      const { data } = await appApi.getApp(id);
+    const { data } = await appApi.getApp(id);
 
-      if (data?.id) {
-        commit("setApp", data);
-      } else {
-        showNotification(commit, data);
-      }
+    if (data?.id) {
+      commit("setApp", data);
+    } else {
+      showNotification(commit, "error", data);
     }
   },
 
-  async createApp({ commit }, input) {
-    const res = await appApi.createApp(input);
+  async createApp({ commit }, payload) {
+    const res = await appApi.createApp(payload);
 
-    if (res.data.id) {
-      commit("setApp", initialAppData);
+    if (res.data?.id) {
+      showNotification(commit, "info", "App was created successfully");
     } else {
       showNotification(commit, res.data);
     }
@@ -81,15 +80,18 @@ const actions = {
 
   async updateApp({ commit }, id) {
     const { data } = await appApi.updateApp(id);
-
-    commit("setApp", data);
+    if (data?.id) {
+      showNotification(commit, "info", "App was updated successfully");
+    } else {
+      showNotification(commit, "error", data);
+    }
     return data;
   },
 
   async deleteApp({ commit }, id) {
-    const { data } = await appApi.updateApp(id);
+    const { data } = await appApi.deleteApp(id);
+    showNotification(commit, "info", "App was deleted successfully");
 
-    commit("setApp", {});
     return data;
   },
 

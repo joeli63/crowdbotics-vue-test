@@ -14,7 +14,7 @@
                 placeholder="please write name"
                 name="name"
                 v-validate="'required|min:1|max:50'"
-                :class="{ 'input-error': errors.has('password') }"
+                :class="{ 'input-error': errors.has('name') }"
               />
               <small v-if="errors.has('name')" class="text-danger">{{
                 errors.first("name")
@@ -33,7 +33,12 @@
                 type="text"
                 placeholder="please write description"
                 name="description"
+                v-validate="'required'"
+                :class="{ 'input-error': errors.has('description') }"
               />
+              <small v-if="errors.has('description')" class="text-danger">{{
+                errors.first("description")
+              }}</small>
             </b-form-group>
           </b-col>
         </b-row>
@@ -47,9 +52,9 @@
                 type="text"
                 placeholder="please write type"
                 name="type"
-                v-validate="'required'"
                 :options="type"
-                :class="{ 'input-error': errors.has('password') }"
+                v-validate="'required'"
+                :class="{ 'input-error': errors.has('type') }"
               ></b-form-select>
               <small v-if="errors.has('type')" class="text-danger">{{
                 errors.first("type")
@@ -65,8 +70,9 @@
                 type="text"
                 placeholder="please write framework"
                 name="framework"
-                v-validate="'required'"
                 :options="framework"
+                v-validate="'required'"
+                :class="{ 'input-error': errors.has('framework') }"
               ></b-form-select>
               <small v-if="errors.has('framework')" class="text-danger">{{
                 errors.first("framework")
@@ -87,7 +93,12 @@
                 type="text"
                 placeholder="please write domain name"
                 name="domain_name"
+                v-validate="'required'"
+                :class="{ 'input-error': errors.has('domain_name') }"
               />
+              <small v-if="errors.has('domain_name')" class="text-danger">{{
+                errors.first("domain_name")
+              }}</small>
             </b-form-group>
           </b-col>
 
@@ -101,6 +112,9 @@
                 type="text"
                 placeholder="please write screenshot"
                 name="screenshot"
+                v-model="app.screenshot"
+                v-validate="'required'"
+                :class="{ 'input-error': errors.has('screenshot') }"
               ></b-form-file>
               <small v-if="errors.has('screenshot')" class="text-danger">{{
                 errors.first("screenshot")
@@ -143,40 +157,46 @@ export default {
     ...mapState("app", ["app"])
   },
   async created() {
-    this.loading = true;
     const appId = this.$route.params.id;
+    if (appId === "create") {
+      const initialAppData = {
+        name: "",
+        description: "",
+        type: "",
+        framework: "",
+        domain_name: "",
+        subscription: "",
+        screenshot: new File(),
+        plan: ""
+      };
+      this.$store.commit("app/setApp", initialAppData);
+    } else {
+      this.loading = true;
 
-    await this.$store.dispatch("app/getApp", appId);
-    this.loading = false;
+      await this.$store.dispatch("app/getApp", appId);
+      this.loading = false;
+    }
   },
   methods: {
     async saveApp() {
-      this.btnLoading = true;
-      const appId = this.$route.params.id;
-      const imagefile = document.querySelector("#screenshot").files[0];
-
-      const formData = new FormData();
-
-      if (appId !== "create")
-        await this.$store.dispatch("app/updateApp", {
-          ...this.app,
-          screenshot: imagefile
-        });
-      else {
+      const validation = await this.$validator.validateAll();
+      if (validation) {
+        this.btnLoading = true;
+        const formData = new FormData();
         // eslint-disable-next-line no-unused-vars
         const { plan, subscription, ...params } = this.app;
         Object.entries(params).forEach(([key, value]) => {
           formData.append(key, value);
         });
 
-        await this.$store.dispatch("app/createApp", formData);
-        this.$store.commit("showNotification", {
-          type: "info",
-          message: "App was created successfully"
-        });
+        const appId = this.$route.params.id;
+        if (appId === "create")
+          await this.$store.dispatch("app/createApp", formData);
+        else await this.$store.dispatch("app/updateApp", formData);
+
+        this.$router.push({ name: "dashboard" });
+        this.btnLoading = false;
       }
-      this.$router.push({ name: "dashboard" });
-      this.btnLoading = false;
     }
   }
 };

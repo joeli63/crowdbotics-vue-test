@@ -34,9 +34,14 @@
 
 .table.b-table {
   opacity: 1 !important;
+  height: 100px !important;
   border: 1px solid #dee2e6;
 }
 
 .table th, .table td {
   vertical-align: middle;
+}
+
+.icon-button {
+  cursor: pointer;
 }

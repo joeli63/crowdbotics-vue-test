@@ -37,9 +37,12 @@ axios.interceptors.request.use(
       config.headers["Authorization"] = "Token " + token;
     }
     let urls = config.url.split("/");
-    if (urls[1] === "apps")
+    if (
+      urls[1] === "apps" &&
+      (config.method !== "get" || config.method !== "delete")
+    ) {
       config.headers["Content-Type"] = "multipart/form-data";
-    else config.headers["Content-Type"] = "application/json";
+    } else config.headers["Content-Type"] = "application/json";
     return config;
   },
   error => {
